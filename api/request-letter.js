@@ -1,9 +1,18 @@
-import fs from 'fs';
+import getStream from 'get-stream';
 import nodemailer from 'nodemailer';
-import path from 'path';
 import PDFDocument from 'pdfkit';
 
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle CORS preflight (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ message: 'Method Not Allowed' });
@@ -16,12 +25,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Generate PDF
+    // 1. Generate PDF in memory
     const doc = new PDFDocument();
-    const filePath = path.join('/tmp', `${studentId}_letter.pdf`);
-    const writeStream = fs.createWriteStream(filePath);
-    doc.pipe(writeStream);
-
     doc.fontSize(12).text(`
 ${date}
 
@@ -35,9 +40,9 @@ InternGO Coordinator
     `);
     doc.end();
 
-    await new Promise((resolve) => writeStream.on('finish', resolve));
+    const pdfBuffer = await getStream.buffer(doc);
 
-    // Send the email
+    // 2. Email the PDF as an attachment
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -54,7 +59,7 @@ InternGO Coordinator
       attachments: [
         {
           filename: `${studentId}_letter.pdf`,
-          path: filePath,
+          content: pdfBuffer,
         },
       ],
     });

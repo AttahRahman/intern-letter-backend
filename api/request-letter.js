@@ -1,50 +1,43 @@
-import { createWriteStream } from 'fs';
+import fs from 'fs';
 import nodemailer from 'nodemailer';
-import { join } from 'path';
+import path from 'path';
 import PDFDocument from 'pdfkit';
 
 export default async function handler(req, res) {
-  console.log('Incoming request to /api/request-letter');
-
   if (req.method !== 'POST') {
-    console.log('Invalid method:', req.method);
-    return res.status(405).json({ message: 'Only POST allowed' });
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   const { name, studentId, company, date, email } = req.body;
-  console.log('Received data:', { name, studentId, company, date, email });
 
   if (!name || !studentId || !company || !date || !email) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
   try {
-    // Generate PDF letter
-    const letterText = `
-      ${date}
+    // Generate PDF
+    const doc = new PDFDocument();
+    const filePath = path.join('/tmp', `${studentId}_letter.pdf`);
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
 
-      TO WHOM IT MAY CONCERN,
+    doc.fontSize(12).text(`
+${date}
 
-      This is to certify that ${name} with student ID ${studentId} is a student of our institution.
-      This letter is to support their request for internship at ${company}.
+TO WHOM IT MAY CONCERN,
 
-      Sincerely,
-      InternGO Coordinator
-    `;
+This is to certify that ${name} with student ID ${studentId} is a student of our institution.
+This letter is to support their request for internship at ${company}.
 
-    const pdfDoc = new PDFDocument();
-    const filePath = join('/tmp', `${studentId}_letter.pdf`);
-    const writeStream = createWriteStream(filePath);
-    pdfDoc.pipe(writeStream);
-    pdfDoc.fontSize(12).text(letterText);
-    pdfDoc.end();
+Sincerely,
+InternGO Coordinator
+    `);
+    doc.end();
 
-    await new Promise((resolve, reject) => {
-      writeStream.on('finish', resolve);
-      writeStream.on('error', reject);
-    });
+    await new Promise((resolve) => writeStream.on('finish', resolve));
 
-    // Send email
+    // Send the email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -66,10 +59,9 @@ export default async function handler(req, res) {
       ],
     });
 
-    console.log('Email sent to', email);
     return res.status(200).json({ message: 'Letter sent successfully' });
-  } catch (error) {
-    console.error('Error processing request:', error);
-    return res.status(500).json({ message: 'Failed to process request' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
   }
 }

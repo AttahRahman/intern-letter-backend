@@ -1,27 +1,15 @@
 {
   "name": "intern-letter-backend",
   "version": "1.0.0",
-  "description": "��#\u0000 \u0000I\u0000n\u0000t\u0000e\u0000r\u0000n\u0000 \u0000L\u0000e\u0000t\u0000t\u0000e\u0000r\u0000 \u0000B\u0000a\u0000c\u0000k\u0000e\u0000n\u0000d\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vercel dev",
+    "start": "node api/request-letter.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AttahRahman/intern-letter-backend.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/AttahRahman/intern-letter-backend/issues"
-  },
-  "homepage": "https://github.com/AttahRahman/intern-letter-backend#readme",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "nodemailer": "^7.0.3",
-    "pdfkit": "^0.17.1"
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.4",
+    "dotenv": "^16.3.1",
+    "pdfkit": "^0.13.0"
   }
 }
